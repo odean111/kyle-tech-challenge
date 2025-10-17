@@ -1,0 +1,332 @@
+openapi: 3.0.3
+info:
+  title: Lothrop Tech Task API
+  description: Backend API for the Lothrop Tech Task
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+paths:
+  /api/v1/:
+    get:
+      summary: Get API status
+      description: Returns a hello world message to confirm API is working
+      operationId: getApiStatus
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/companies:
+    get:
+      summary: List companies
+      description: Get a list of all companies with optional filtering and pagination
+      operationId: getCompanies
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of companies to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of companies to skip for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: jurisdiction
+          in: query
+          description: Filter companies by jurisdiction
+          required: false
+          schema:
+            type: string
+            enum: ["UK", "Singapore", "Caymens"]
+      responses:
+        '200':
+          description: List of companies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompaniesResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Create a new company
+      description: Create a new company with the provided information
+      operationId: createCompany
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCompanyRequest'
+      responses:
+        '201':
+          description: Company created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '400':
+          description: Bad request - validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/companies/{id}:
+    get:
+      summary: Get a company by ID
+      description: Retrieve a specific company by its UUID
+      operationId: getCompanyById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Company UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Company found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid UUID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete a company
+      description: Delete a company by its UUID
+      operationId: deleteCompany
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Company UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Company deleted successfully
+        '404':
+          description: Company not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid UUID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      required:
+        - error
+        - msg
+      properties:
+        error:
+          type: boolean
+          example: false
+        msg:
+          type: string
+          example: "hello world"
+    
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - msg
+      properties:
+        error:
+          type: boolean
+          example: true
+        msg:
+          type: string
+          example: "An error occurred"
+
+    Company:
+      type: object
+      required:
+        - id
+        - jurisdiction
+        - company_name
+        - company_address
+        - date_created
+        - date_updated
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        jurisdiction:
+          type: string
+          enum: ["UK", "Singapore", "Caymens"]
+          example: "UK"
+        company_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Example Corp Ltd"
+        company_address:
+          type: string
+          minLength: 1
+          example: "123 Business Street, London, UK"
+        nature_of_business:
+          type: string
+          nullable: true
+          example: "Software Development"
+        number_of_directors:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 100
+          example: 3
+        number_of_shareholders:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 1000
+          example: 5
+        sec_code:
+          type: string
+          nullable: true
+          example: "SEC123456"
+        date_created:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00Z"
+        date_updated:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00Z"
+
+    CreateCompanyRequest:
+      type: object
+      required:
+        - jurisdiction
+        - company_name
+        - company_address
+      properties:
+        jurisdiction:
+          type: string
+          enum: ["UK", "Singapore", "Caymens"]
+          example: "UK"
+        company_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Example Corp Ltd"
+        company_address:
+          type: string
+          minLength: 1
+          example: "123 Business Street, London, UK"
+        nature_of_business:
+          type: string
+          nullable: true
+          example: "Software Development"
+        number_of_directors:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 100
+          example: 3
+        number_of_shareholders:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 1000
+          example: 5
+        sec_code:
+          type: string
+          nullable: true
+          example: "SEC123456"
+
+    CompaniesResponse:
+      type: object
+      required:
+        - companies
+        - total
+        - limit
+        - offset
+      properties:
+        companies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Company'
+        total:
+          type: integer
+          example: 150
+        limit:
+          type: integer
+          example: 20
+        offset:
+          type: integer
+          example: 0
